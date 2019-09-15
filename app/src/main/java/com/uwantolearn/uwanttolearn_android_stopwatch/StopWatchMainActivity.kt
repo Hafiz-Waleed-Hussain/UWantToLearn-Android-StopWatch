@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.jakewharton.rxbinding3.view.clicks
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 
@@ -16,9 +17,14 @@ class StopWatchMainActivity : AppCompatActivity() {
             .subscribe { println(it) }
         resetButton.clicks().map { false }
             .subscribe { println(it) }
+
+        timerObservable()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(display::setText)
     }
 
-    fun timerObservable(): Observable<String> = Observable.interval(0, 1, TimeUnit.MILLISECONDS)
-        .takeWhile { it <= 3600L }
-        .map { seconds -> "${seconds / 60} : ${seconds % 60}" }
+    private fun timerObservable(): Observable<String> =
+        Observable.interval(0, 1, TimeUnit.MILLISECONDS)
+            .takeWhile { it <= 3600L }
+            .map { seconds -> "${seconds / 60} : ${seconds % 60}" }
 }
