@@ -1,12 +1,11 @@
 package com.uwantolearn.uwanttolearn_android_stopwatch
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.jakewharton.rxbinding3.view.clicks
+import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.merge
+import io.reactivex.subjects.PublishSubject
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 
@@ -17,15 +16,22 @@ class StopWatchMainActivity : AppCompatActivity() {
 
     private val disposable = CompositeDisposable()
     private val displayInitialState by lazy { resources.getString(R.string._0_0) }
+    private val clickEmitterSubject = PublishSubject.create<Boolean>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        mergeClicks().switchMap {
-            if (it) timerObservable()
-            else Observable.just(displayInitialState)
-        }.subscribe(display::setText)
+        startButton.setOnClickListener { clickEmitterSubject.onNext(true) }
+        resetButton.setOnClickListener { clickEmitterSubject.onNext(false) }
+
+
+        clickEmitterSubject
+            .doOnNext(::buttonStateManager)
+            .switchMap {
+                if (it) timerObservable()
+                else Observable.just(displayInitialState)
+            }.subscribe(display::setText)
             .let(disposable::add)
     }
 
@@ -33,12 +39,6 @@ class StopWatchMainActivity : AppCompatActivity() {
         disposable.clear()
         super.onDestroy()
     }
-
-    private fun mergeClicks(): Observable<Boolean> =
-        listOf(startButton.clicks().map { true }, resetButton.clicks().map { false })
-            .merge()
-            .doOnNext(::buttonStateManager)
-
 
     private fun timerObservable(): Observable<String> =
         Observable.interval(0, 1, TimeUnit.SECONDS)
@@ -58,3 +58,4 @@ class StopWatchMainActivity : AppCompatActivity() {
         resetButton.isEnabled = boolean
     }
 }
+
