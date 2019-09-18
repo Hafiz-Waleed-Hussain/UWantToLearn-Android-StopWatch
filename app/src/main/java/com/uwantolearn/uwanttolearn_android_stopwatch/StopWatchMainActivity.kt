@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.jakewharton.rxbinding3.view.clicks
 import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.SerialDisposable
 import io.reactivex.rxkotlin.merge
 import kotlinx.android.synthetic.main.activity_main.*
@@ -16,8 +17,9 @@ class StopWatchMainActivity : AppCompatActivity() {
     private val RUNNING_BUTTON_STATE = Triple(false, true, true)
     private val PAUSE_BUTTON_STATE = Triple(true, false, true)
     private val displayInitialState by lazy { resources.getString(R.string._0_0) }
-    private val serialDisposableForProvide = SerialDisposable()
-    private val serialDisposableForUiState = SerialDisposable()
+//    private val serialDisposableForProvide = SerialDisposable()
+//    private val serialDisposableForUiState = SerialDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     private val viewModel = StopWatchViewModel()
 
@@ -26,16 +28,19 @@ class StopWatchMainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         mergeClicks()
             .let(viewModel::provide)
-            .let(serialDisposableForProvide::set)
+            .let(compositeDisposable::add)
+//            .let(serialDisposableForProvide::set)
 
         viewModel.uiState()
             .subscribe(::render)
-            .let(serialDisposableForUiState::set)
+            .let(compositeDisposable::add)
+//            .let(serialDisposableForUiState::set)
     }
 
     override fun onDestroy() {
-        serialDisposableForProvide.dispose()
-        serialDisposableForUiState.dispose()
+        compositeDisposable.clear()
+//        serialDisposableForProvide.dispose()
+//        serialDisposableForUiState.dispose()
         super.onDestroy()
     }
 
